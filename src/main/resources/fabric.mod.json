@@ -1,29 +1,35 @@
 {
 	"schemaVersion": 1,
-	"id": "modid",
+	"id": "not-enough-racism",
 	"version": "${version}",
-	"name": "Example Mod",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Not Enough Racism",
+	"description": "Boih is the savior of skyblock.",
 	"authors": [
-		"Me!"
+		"TheHolyChickn"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/theholychickn",
+		"sources": "https://github.com/theholychickn"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/modid/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.example.ExampleMod"
+			{
+				"adapter": "kotlin",
+				"value": "com.github.theholychickn.xray.ExampleMod"
+			}
 		],
 		"client": [
-			"com.example.client.ExampleModClient"
+			{
+				"adapter": "kotlin",
+				"value": "com.github.theholychickn.xray.client.ExampleModClient"
+			}
 		]
 	},
 	"mixins": [
-		"modid.mixins.json",
+		"not-enough-racism.mixins.json",
 		{
 			"config": "modid.client.mixins.json",
 			"environment": "client"
@@ -33,6 +39,7 @@
 		"fabricloader": ">=0.19.3",
 		"minecraft": "~26.1.2",
 		"java": ">=25",
-		"fabric-api": "*"
+		"fabric-api": "*",
+		"fabric-language-kotlin": "*"
 	}
 }

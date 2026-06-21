@@ -7,7 +7,13 @@ pluginManagement {
 		mavenCentral()
 		gradlePluginPortal()
 	}
+	plugins {
+		id 'org.jetbrains.kotlin.jvm' version '2.4.0'
+	}
+}
+plugins {
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
 
 // Should match your modid
-rootProject.name = 'modid'
+rootProject.name = 'not-enough-racism'
