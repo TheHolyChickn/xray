@@ -5,23 +5,29 @@ import com.google.gson.GsonBuilder
 import net.fabricmc.loader.api.FabricLoader
 import java.io.File
 
-data class XRayConfig(
-    var distance: Int = 4,
-    var targetBlocks: List<String> = listOf("minecraft:diamond_ore", "minecraft:deepslate_diamond_ore", "minecraft:ancient_debris")
+data class HyperionConfig(
+    var activeEpisode: String = "apollyon_upload_1"
 )
 
 object ConfigManager {
     private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
-    private val file = File(FabricLoader.getInstance().configDir.toFile(), "not-enough-racism.json")
-    var config = XRayConfig()
+    private val file = File(
+        FabricLoader.getInstance().configDir.toFile(),
+        "not-enough-racism.json"
+    )
+
+    var config = HyperionConfig()
+        private set
 
     fun load() {
         if (file.exists()) {
-            try {
-                config = gson.fromJson(file.readText(), XRayConfig::class.java)
-                config.distance = config.distance.coerceIn(1, 15)
-            } catch (ex: Exception) {
+            runCatching {
+                config = gson.fromJson(file.readText(), HyperionConfig::class.java)
+            }.onFailure { ex ->
                 ex.printStackTrace()
+                // corrupted config, reset to defaults and overwrite
+                config = HyperionConfig()
+                save()
             }
         } else {
             save()

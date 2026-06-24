@@ -3,7 +3,7 @@
 	"id": "not-enough-racism",
 	"version": "${version}",
 	"name": "Not Enough Racism",
-	"description": "Boih is the savior of skyblock.",
+	"description": "Apollyon watches.",
 	"authors": [
 		"TheHolyChickn"
 	],
@@ -18,22 +18,18 @@
 		"main": [
 			{
 				"adapter": "kotlin",
-				"value": "com.github.theholychickn.xray.ExampleMod"
+				"value": "com.github.theholychickn.xray.HyperionMod"
 			}
 		],
 		"client": [
 			{
 				"adapter": "kotlin",
-				"value": "com.github.theholychickn.xray.client.NotEnoughRacismClient"
+				"value": "com.github.theholychickn.xray.client.HyperionModClient"
 			}
 		]
 	},
 	"mixins": [
-		"not-enough-racism.mixins.json",
-		{
-			"config": "not-enough-racism.client.mixins.json",
-			"environment": "client"
-		}
+		"not-enough-racism.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.19.3",
