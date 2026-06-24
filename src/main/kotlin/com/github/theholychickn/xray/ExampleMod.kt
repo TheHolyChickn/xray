@@ -1,4 +1,4 @@
-package com.example
+package com.github.theholychickn.xray
 
 import net.fabricmc.api.ModInitializer
 import net.minecraft.resources.Identifier

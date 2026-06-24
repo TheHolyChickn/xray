@@ -12,7 +12,7 @@
 		"sources": "https://github.com/theholychickn"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/modid/icon.png",
+	"icon": "assets/not-enough-racism/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
@@ -24,21 +24,21 @@
 		"client": [
 			{
 				"adapter": "kotlin",
-				"value": "com.github.theholychickn.xray.client.ExampleModClient"
+				"value": "com.github.theholychickn.xray.client.NotEnoughRacismClient"
 			}
 		]
 	},
 	"mixins": [
 		"not-enough-racism.mixins.json",
 		{
-			"config": "modid.client.mixins.json",
+			"config": "not-enough-racism.client.mixins.json",
 			"environment": "client"
 		}
 	],
 	"depends": {
 		"fabricloader": ">=0.19.3",
 		"minecraft": "~26.1.2",
-		"java": ">=25",
+		"java": ">=21",
 		"fabric-api": "*",
 		"fabric-language-kotlin": "*"
 	}
