@@ -1,15 +1,19 @@
 package com.github.theholychickn.xray.client
 
 import com.github.theholychickn.xray.HyperionMod
+import com.github.theholychickn.xray.client.entities.HyperionRenderer
 import com.github.theholychickn.xray.client.episode.ApollyonUpload1
 import com.github.theholychickn.xray.client.episode.Episode
 import com.github.theholychickn.xray.client.episode.Episodes
 import com.github.theholychickn.xray.config.ConfigManager
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements
 import net.minecraft.client.KeyMapping
+import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.Identifier
 
 class HyperionModClient : ClientModInitializer {
@@ -24,8 +28,15 @@ class HyperionModClient : ClientModInitializer {
         )
     }
 
+    private var snapshotCooldown = -1
+
     override fun onInitializeClient() {
         ConfigManager.load()
+
+        // entity renderer
+        EntityRendererRegistry.register(HyperionMod.HYPERION_ENTITY) { context ->
+            HyperionRenderer(context)
+        }
 
         // ── Register all episodes (also registers their keybinds with Fabric) ─────────
         // Add new episodes here as the ARG grows.
@@ -37,6 +48,7 @@ class HyperionModClient : ClientModInitializer {
         Episodes.activate(ConfigManager.config.activeEpisode)
 
         registerHud()
+        registerWorldEvents()
         registerKeybinds()
     }
 
@@ -55,6 +67,12 @@ class HyperionModClient : ClientModInitializer {
         }
     }
 
+    private fun registerWorldEvents() {
+        ClientPlayConnectionEvents.JOIN.register { _, _, _ ->
+            snapshotCooldown = 60
+        }
+    }
+
     // ── keybinds ──────────────────────────────────────────────────────────────────────
 
     /**
@@ -66,6 +84,12 @@ class HyperionModClient : ClientModInitializer {
      */
     private fun registerKeybinds() {
         ClientTickEvents.END_CLIENT_TICK.register { client ->
+            if (snapshotCooldown > 0) {
+                if (--snapshotCooldown == 0) {
+                    Episodes.snapshotAllWorldStates()
+                }
+            }
+
             val ep = Episodes.active ?: return@register
             ep.keybinds.forEach { (key, mapping) ->
                 while (key.consumeClick()) { mapping.invoke(client) }

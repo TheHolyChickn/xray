@@ -1,6 +1,8 @@
 package com.github.theholychickn.xray.client.episode
 
 import com.github.theholychickn.xray.HyperionMod
+import net.minecraft.client.KeyMapping
+import net.minecraft.client.Minecraft
 
 
 /**
@@ -16,6 +18,8 @@ object Episodes {
 
     private val registry = linkedMapOf<String, Episode>()
 
+    private val computedKeybinds = mutableMapOf<String, Map<KeyMapping, (Minecraft) -> Unit>>()
+
     /** The currently active episode, or null if none are active. */
     var active: Episode? = null
         private set
@@ -27,7 +31,9 @@ object Episodes {
     fun register(vararg episodes: Episode) {
         for (ep in episodes) {
             registry[ep.id] = ep
-            ep.registerKeybinds()
+            val generated = ep.buildGeneratedKeybinds()
+            computedKeybinds[ep.id] = ep.keybinds + generated
+            ep.registerKeybinds(generated)
         }
     }
 
@@ -49,6 +55,23 @@ object Episodes {
         return ep
     }
 
-    /** All registered episodes in registration order. */
+    // ── queries ───────────────────────────────────────────────────────────────────────
+
+    /** All keybinds (manual + generated) for the active episode. */
+    fun getActiveKeybinds(): Map<KeyMapping, (Minecraft) -> Unit> =
+        computedKeybinds[active?.id] ?: emptyMap()
+
+    /** All registered episodes, in registration order. */
     fun all(): Collection<Episode> = registry.values
+
+    // ── world events ──────────────────────────────────────────────────────────────────
+
+    /**
+     * Snapshots block states for every registered episode.
+     * Called by [HyperionModClient] a few ticks after a world is joined,
+     * once chunks around the player are loaded.
+     */
+    fun snapshotAllWorldStates() {
+        registry.values.forEach { it.snapshotWorld() }
+    }
 }

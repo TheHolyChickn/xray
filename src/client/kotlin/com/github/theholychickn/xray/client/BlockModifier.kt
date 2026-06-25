@@ -11,21 +11,14 @@ import net.minecraft.world.level.block.state.BlockState
 /**
  * Utility for reading and writing blocks in the current world.
  *
- * Intended usage in episode `reset()` methods:
- * ```kt
- * val savedStates: Map<BlockPos, BlockState> = coordList.associateWith { BlockModifier.getState(it) }
- *
- * // later in reset():
- * savedStates.forEach { (pos, state) -> BlockModifier.set(pos, state) }
- * ```
  *
  * ## Thread safety
- * [set] dispatches to the integrated server thread via `server.execute { }`, so it is safe
+ * [set] and [setRegion] calls dispatche to the integrated server thread via `server.execute { }`, so it is safe
  * to call from the render thread or the client tick thread. [getState] reads from the
  * client-side shadow level and is safe to call from any client thread.
  *
  * ## Multiplayer
- * [set] requires an integrated (singleplayer) server. Calling it while connected to a
+ * [set] and [setRegion] require an integrated (singleplayer) server. Calling it while connected to a
  * remote server is a no-op; a warning is logged.
  */
 object BlockModifier {
@@ -60,6 +53,34 @@ object BlockModifier {
         val dimension = client.player?.level()?.dimension() ?: Level.OVERWORLD
         server.execute {
             server.getLevel(dimension)?.setBlock(pos, state, 3)
+        }
+    }
+
+    // ── setRegion (two-corner fill) ───────────────────────────────────────────────────
+
+    fun setRegion(x1: Int, y1: Int, z1: Int, x2: Int, y2: Int, z2: Int, block: Block) =
+        setRegion(BlockPos(x1, y1, z1), BlockPos(x2, y2, z2), block.defaultBlockState())
+
+    fun setRegion(x1: Int, y1: Int, z1: Int, x2: Int, y2: Int, z2: Int, state: BlockState) =
+        setRegion(BlockPos(x1, y1, z1), BlockPos(x2, y2, z2), state)
+
+    fun setRegion(c1: BlockPos, c2: BlockPos, block: Block) =
+        setRegion(c1, c2, block.defaultBlockState())
+
+    /**
+     * Fills the axis-aligned box between [c1] and [c2] (inclusive) with [state].
+     * Uses flag `2` (UPDATE_CLIENTS only) on each block to avoid cascading neighbour
+     * updates for large fills; the client receives all changes normally.
+     */
+    fun setRegion(c1: BlockPos, c2: BlockPos, state: BlockState) {
+        val client = Minecraft.getInstance()
+        val server = client.singleplayerServer ?: return
+        val dim    = client.player?.level()?.dimension() ?: Level.OVERWORLD
+        server.execute {
+            val level = server.getLevel(dim) ?: return@execute
+            BlockPos.betweenClosed(c1, c2).forEach { pos ->
+                level.setBlock(pos, state, 2)
+            }
         }
     }
 
