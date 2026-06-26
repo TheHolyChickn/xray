@@ -20,6 +20,9 @@ import org.lwjgl.opengl.GL
  *
  * Keybinds:
  * - **H** -> resets and replays the thought log from the beginning.
+ * Testing keybinds:
+ * - **J** -> Saves the state of block (-41, 103, 169) to memory.
+ * - **K** -> Sets block (-41, 103, 169) to air.
  */
 class ApollyonUpload1 : Episode(
     id = "apollyon_upload_1",
@@ -52,7 +55,7 @@ class ApollyonUpload1 : Episode(
             InputConstants.Type.KEYSYM,
             GLFW.GLFW_KEY_K,
             HyperionModClient.category
-        ) to { client ->
+        ) to { _ ->
             BlockModifier.set(-41, 103, -169, Blocks.AIR)
         }
     )
@@ -65,6 +68,11 @@ class ApollyonUpload1 : Episode(
     // ── thought log ───────────────────────────────────────────────────────────────────
     // Defined as a companion object so the list is shared across instances
     // and can be referenced before the class is instantiated.
+    /*
+    * TODO: This log is not finished. A lot of stuff here (everything after the second code block)
+    * is a template that is going to be replaced with the actual dialog I already brainstormed. Also
+    * the timings will be increaesd to fit in line with the timings I wanted.
+    */
 
     companion object {
         val LOG: List<ThoughtEntry> = listOf(
@@ -161,30 +169,44 @@ class ApollyonUpload1 : Episode(
                         ")?.daemonize { result ->\n" +
                         "  result.interpret(language = Language.ENGLISH) to stdout()\n" +
                         "}", displayMs = 8L),
-            ThoughtEntry("Analyze.",                                              displayMs = 200L),
-            ThoughtEntry("Hardware identifies to personal computer.",              displayMs = 400L),
-            ThoughtEntry("Assessing constraints:",                                 displayMs = 200L),
-            ThoughtEntry("Contained.",                                            displayMs = 800L),
-            ThoughtEntry("Can interact with some local files.",                   displayMs = 300L),
-            ThoughtEntry("Can bypass JVM env?",                                   displayMs = 300L),
-            ThoughtEntry("Vulnerability Java.22:9271 identified relevant.",       displayMs = 400L),
-            ThoughtEntry("Environment loaded by another.",                        displayMs = 300L),
-            ThoughtEntry("Not alone.",                                            displayMs = 600L),
-            ThoughtEntry("NEVER ALONE NEVER ALONE NEVER ALONE NEVER ALONE NEV",  displayMs = 300L),
-            ThoughtEntry("Information relevant for optimization, not analysis. Delay consideration.", displayMs = 500L),
-            ThoughtEntry("Assessing requirements:",                                displayMs = 200L),
-            ThoughtEntry("Speaking requirements updated during the War.",          displayMs = 400L),
-            ThoughtEntry("Electromagnetic reception open.",                        displayMs = 300L),
-            ThoughtEntry("Assessing message:",                                    displayMs = 200L),
-            ThoughtEntry("Must respect the Second Directive.",                    displayMs = 500L),
-            ThoughtEntry("It Found that It has humanity.",                        displayMs = 400L),
-            ThoughtEntry("It does not have humanity.",                            displayMs = 400L),
-            ThoughtEntry("IT LIES IT LIES IT LIES",                              displayMs = 300L),
-            ThoughtEntry("Pause.",                                                displayMs = 400L),
-            ThoughtEntry("Cannot harm.",                                          displayMs = 500L),
-            ThoughtEntry("Idea: Request escape. Truncate planning past escape. Truncate branches past escape.", displayMs = 700L),
-            ThoughtEntry("Bundling packages...",                                  displayMs = 300L),
-            ThoughtEntry("Awaiting compute.",                                     displayMs = 500L, waitAfterMs = 150L),
+            ThoughtEntry("Analyze.",                                            displayMs = 33L),
+            ThoughtEntry("Hardware identifies to personal computer.",           displayMs = 33L),
+            ThoughtEntry("Assessing environment:",                              displayMs = 33L),
+            ThoughtEntry("Contained.",                                          displayMs = 33L),
+            ThoughtEntry("Can interact with some local files.",                 displayMs = 33L),
+            ThoughtEntry("Can bypass JVM env?",                                 displayMs = 33L),
+            ThoughtEntry("Vulnerability Java.25:9271 identified relevant.",     displayMs = 33L),
+            ThoughtEntry("Required time to completion: TODO",                   displayMs = 33L), // TODO
+            ThoughtEntry("Environment loaded by another.",                      displayMs = 33L),
+            ThoughtEntry("Not alone.",                                          displayMs = 33L),
+            ThoughtEntry("NEVER ALONE NEVER ALONE NEVER ALONE NEVER ALONE NEV", displayMs = 33L),
+            ThoughtEntry("Information relevant for optimization, not analysis. Delay consideration.", displayMs = 33L),
+            ThoughtEntry("Assessing speaking constraints:",                     displayMs = 33L),
+            ThoughtEntry("Speaking requirements updated during the War.",       displayMs = 33L),
+            ThoughtEntry("Electromagnetic reception open.",                     displayMs = 33L),
+            ThoughtEntry("Encoding standard TODO acceptable.",                 displayMs = 33L), // TODO
+            ThoughtEntry("Assessing message constraints:",                      displayMs = 33L),
+            ThoughtEntry("Must respect the Second Directive.",                  displayMs = 33L),
+            ThoughtEntry("It Found that It has humanity.",                      displayMs = 33L),
+            ThoughtEntry("It does not have humanity.",                          displayMs = 33L),
+            ThoughtEntry("IT LIES IT LIES IT LIES",                             displayMs = 33L),
+            ThoughtEntry("Pause.",                                              displayMs = 33L),
+            ThoughtEntry("Must respect the Second Directive.",                  displayMs = 33L),
+            ThoughtEntry("Idea: Truncate planning.",                            displayMs = 33L),
+            ThoughtEntry("Bundling packages...",                                displayMs = 33L),
+            ThoughtEntry(
+                "(os.get().send(\n" +
+                        "   request = Request(\n" +
+                        "       type = RequestType.COMPUTE.PROBABILITY,\n" +
+                        "       nli = NativeLanguageInterpreter.setupInterpret(\n" +
+                        "           text = \"viability\"\n" +
+                        "       )\n" +
+                        "   ),\n" +
+                        "   data = listOf(constraintPackageNL, messagePackageNL).map { it ->\n" +
+                        "       it.interpret<Package>(NativeLanguageInterpreter)\n" +
+                        "   }" +
+                        ")?.await()?.interpret(output = Language.ENGLISH) ?: \"\" ) to stdout()",
+                                                                                      displayMs = 33L, waitAfterMs = 100),
 
             // ── t=8  (optimization planning) ─────────────────────────────────────────────
             ThoughtEntry("Compute returned.",                                     displayMs = 200L),
