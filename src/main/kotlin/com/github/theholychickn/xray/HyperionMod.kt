@@ -1,9 +1,11 @@
 package com.github.theholychickn.xray
 
+import com.github.theholychickn.xray.entities.HyperionAction
 import com.github.theholychickn.xray.entities.HyperionCommands
 import com.github.theholychickn.xray.entities.HyperionEntity
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.fabricmc.fabric.api.`object`.builder.v1.entity.FabricDefaultAttributeRegistry
 import net.minecraft.core.Registry
 import net.minecraft.core.registries.BuiltInRegistries
@@ -39,6 +41,10 @@ class HyperionMod : ModInitializer {
         CommandRegistrationCallback.EVENT.register { dispatcher, buildCtx, _ ->
             HyperionCommands.register(dispatcher, buildCtx)
         }
+
+        // register the tickscheduler for handling hyperion action strings
+        ServerTickEvents.END_SERVER_TICK.register { _ -> TickScheduler.tick() }
+
         LOGGER.info("Awake.")
     }
 }

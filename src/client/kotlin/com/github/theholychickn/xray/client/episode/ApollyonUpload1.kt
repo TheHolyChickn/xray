@@ -35,7 +35,7 @@ class ApollyonUpload1 : Episode(
         KeyMapping(
             "key.not-enough-racism.apollyon_upload_1.reset",
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_H,
+            GLFW.GLFW_KEY_1,
             HyperionModClient.category
         ) to { client ->
             reset()
@@ -57,6 +57,14 @@ class ApollyonUpload1 : Episode(
             HyperionModClient.category
         ) to { _ ->
             BlockModifier.set(-41, 103, -169, Blocks.AIR)
+        },
+        KeyMapping(
+            "key.not-enough-racism.apollyon_upload_1.hyperion_test",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_L,
+            HyperionModClient.category
+        ) to { _ ->
+            //
         }
     )
 

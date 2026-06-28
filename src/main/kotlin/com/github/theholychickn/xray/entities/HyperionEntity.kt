@@ -2,16 +2,22 @@ package com.github.theholychickn.xray.entities
 
 import net.minecraft.ChatFormatting
 import net.minecraft.core.BlockPos
+import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.sounds.SoundSource
 import net.minecraft.world.InteractionHand
+import net.minecraft.world.SimpleContainer
+import net.minecraft.world.damagesource.DamageSource
 import net.minecraft.world.entity.EntityType
+import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.entity.PathfinderMob
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier
 import net.minecraft.world.entity.item.ItemEntity
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
+import net.minecraft.world.item.equipment.ArmorType
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.entity.ChestBlockEntity
 import net.minecraft.world.level.block.entity.LecternBlockEntity
@@ -35,13 +41,88 @@ import kotlin.math.sqrt
  */
 class HyperionEntity(type: EntityType<HyperionEntity>, level: Level) : PathfinderMob(type, level) {
 
+    /**
+     * 27 slot inventory, like that of a player without the hotbar.
+     *
+     * Minecraft already handles armor and equipped items, so this is for anything else Hyperion is carrying.
+     */
+    val inventory: SimpleContainer = SimpleContainer(27)
+
+    init {
+        // guraentee all items drop on death
+        EquipmentSlot.entries.forEach { setDropChance(it, 2.0f) }
+    }
+
+    override fun dropCustomDeathLoot(level: ServerLevel, source: DamageSource, killedByPlayer: Boolean) {
+        super.dropCustomDeathLoot(level, source, killedByPlayer)
+        for (i in 0 until inventory.containerSize) {
+            val stack = inventory.getItem(i)
+            if (!stack.isEmpty) spawnAtLocation(level, stack)
+        }
+    }
+
     /** Hyperion has no autonomous goals and is controlled fully by commands. */
     override fun registerGoals() {}
-
     override fun canBeLeashed() = false
     override fun isPushable() = false
-    // hyperion should be a player
     override fun canBreatheUnderwater() = false
+
+    // ── inventory ─────────────────────────────────────────────────────────────────────
+
+    /**
+     * Puts [stack] into the first empty slot of [inventory].
+     * Returns false and does nothing if inventory full.
+     */
+    fun addToInventory(stack: ItemStack): Boolean {
+        for (i in 0 until inventory.containerSize) {
+            if (inventory.getItem(i).isEmpty) {
+                inventory.setItem(i, stack)
+                return true
+            }
+        }
+        return false
+    }
+
+    /**
+     * Puts [stack] in inventory slot [index] (0-26).
+     */
+    fun setInventorySlot(index: Int, stack: ItemStack) =
+        inventory.setItem(index.coerceIn(0, inventory.containerSize - 1), stack)
+
+    /** Returns the stack in inventory slot [index] (0-26) */
+    fun getInventorySlot(index: Int) = inventory.getItem(index.coerceIn(0, inventory.containerSize - 1))
+
+    /**
+     * Equips [stack] into the slot that matches its type:
+     * armor -> armor slot
+     * Totems -> offhand
+     * everything else -> MAINHAND
+     */
+    fun autoEquip(stack: ItemStack) {
+        val slot = when (stack.item) {
+            Items.TOTEM_OF_UNDYING -> EquipmentSlot.OFFHAND
+            else -> stack.get(DataComponents.EQUIPPABLE)?.slot ?: EquipmentSlot.MAINHAND
+        }
+        setItemSlot(slot, stack)
+    }
+
+    /** Equips [stack] in [slot]. Thin wrapper around [setItemSlot] for call-site clarity. */
+    fun equip(slot: EquipmentSlot, stack: ItemStack) = setItemSlot(slot, stack)
+
+    /** Puts [stack] in Hyperion's main hand */
+    fun holdMainHand(stack: ItemStack) = setItemSlot(EquipmentSlot.MAINHAND, stack)
+
+    /** puts [stack] in Hyperion's off hand */
+    fun holdOffHand(stack: ItemStack) = setItemSlot(EquipmentSlot.OFFHAND, stack)
+
+    /** Clears every equipment and inventory slot */
+    fun clearInventory() {
+        EquipmentSlot.entries.forEach { setItemSlot(it, ItemStack.EMPTY) }
+        for (i in 0 until inventory.containerSize) inventory.setItem(i, ItemStack.EMPTY)
+    }
+
+    /** Applies [loadout] to this entity - delegates to [HyperionLoadout.applyTo] */
+    fun applyLoadout(loadout: HyperionLoadout) = loadout.applyTo(this)
 
     // ── movement ──────────────────────────────────────────────────────────────────────
 
@@ -225,7 +306,7 @@ class HyperionEntity(type: EntityType<HyperionEntity>, level: Level) : Pathfinde
     }
 
     companion object {
-        fun createAttributes(): AttributeSupplier.Builder = PathfinderMob.createMobAttributes()
+        fun createAttributes(): AttributeSupplier.Builder = createMobAttributes()
     }
 
 }

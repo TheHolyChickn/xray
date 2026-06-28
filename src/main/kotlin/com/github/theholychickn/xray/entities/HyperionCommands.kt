@@ -1,5 +1,6 @@
 package com.github.theholychickn.xray.entities
 
+import com.github.theholychickn.xray.HyperionMod
 import com.mojang.brigadier.CommandDispatcher
 import com.mojang.brigadier.arguments.DoubleArgumentType
 import com.mojang.brigadier.arguments.FloatArgumentType
@@ -13,8 +14,10 @@ import net.minecraft.commands.arguments.coordinates.BlockPosArgument
 import net.minecraft.commands.arguments.item.ItemArgument
 import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.network.Filterable
 import net.minecraft.server.permissions.Permissions
+import net.minecraft.world.entity.EquipmentSlot
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.component.WrittenBookContent
@@ -60,6 +63,8 @@ object HyperionCommands {
                 .then(chest())
                 .then(book())
                 .then(swing())
+                .then(spawn())
+                .then(inv(buildCtx))
         )
     }
 
@@ -89,6 +94,16 @@ object HyperionCommands {
             }
             else -> entities.first()
         }
+    }
+
+    private fun slotFromString(s: String): EquipmentSlot? = when (s.lowercase()) {
+        "head", "helmet"      -> EquipmentSlot.HEAD
+        "chest", "chestplate" -> EquipmentSlot.CHEST
+        "legs", "leggings"    -> EquipmentSlot.LEGS
+        "feet", "boots"       -> EquipmentSlot.FEET
+        "mainhand", "hand"    -> EquipmentSlot.MAINHAND
+        "offhand"             -> EquipmentSlot.OFFHAND
+        else                  -> null
     }
 
     /**
@@ -279,4 +294,143 @@ object HyperionCommands {
         getHyperion(ctx.source)?.swing()
         1
     }
+
+    // ── spawn ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * `/hyperion spawn <x> <y> <z>` — spawns with no items.
+     * `/hyperion spawn <x> <y> <z> default` — spawns with [HyperionLoadout.Builder.defaultLoadout].
+     */
+    private fun spawn() = Commands.literal("spawn")
+        .then(Commands.argument("x", DoubleArgumentType.doubleArg())
+            .then(Commands.argument("y", DoubleArgumentType.doubleArg())
+                .then(Commands.argument("z", DoubleArgumentType.doubleArg())
+                    .then(Commands.literal("default")
+                        .executes { ctx ->
+                            spawnHyperion(
+                                ctx.source,
+                                DoubleArgumentType.getDouble(ctx, "x"),
+                                DoubleArgumentType.getDouble(ctx, "y"),
+                                DoubleArgumentType.getDouble(ctx, "z"),
+                                HyperionLoadout.Builder(ctx.source.registryAccess()).defaultLoadout
+                            )
+                        }
+                    )
+                    .executes { ctx ->
+                        spawnHyperion(ctx.source,
+                            DoubleArgumentType.getDouble(ctx, "x"),
+                            DoubleArgumentType.getDouble(ctx, "y"),
+                            DoubleArgumentType.getDouble(ctx, "z"),
+                            null
+                        )
+                    }
+                )
+            )
+        )
+
+    private fun spawnHyperion(
+        source: CommandSourceStack,
+        x: Double, y: Double, z: Double,
+        loadout: HyperionLoadout?
+    ): Int {
+        val level  = source.level as? ServerLevel ?: return 0
+        val entity = HyperionEntity(HyperionMod.HYPERION_ENTITY, level)
+        entity.setPos(x, y, z)
+        loadout?.applyTo(entity)
+        level.addFreshEntity(entity)
+        source.sendSystemMessage(Component.literal(
+            "Hyperion spawned at ${x.toInt()}, ${y.toInt()}, ${z.toInt()}" +
+                    if (loadout != null) " with default loadout." else "."
+        ))
+        return 1
+    }
+
+    // ── inv ───────────────────────────────────────────────────────────────────────────
+
+    /**
+     * `/hyperion inv give <item> [count]`   — add item to Hyperion's general inventory.
+     * `/hyperion inv hold <item> [count]`   — put item in main hand.
+     * `/hyperion inv offhand <item>`         — put item in off hand.
+     * `/hyperion inv wear <item>`            — auto-equip armor to correct slot.
+     * `/hyperion inv equip <slot> <item>`    — equip item to named slot.
+     *                                          Slots: head/chest/legs/feet/mainhand/offhand
+     * `/hyperion inv clear`                  — clear all slots and inventory.
+     * `/hyperion inv default`                — apply [HyperionDefaultLoadout].
+     */
+    private fun inv(buildCtx: CommandBuildContext) = Commands.literal("inv")
+
+        .then(Commands.literal("give")
+            .then(Commands.argument("item", ItemArgument.item(buildCtx))
+                .then(Commands.argument("count", IntegerArgumentType.integer(1, 64))
+                    .executes { ctx ->
+                        val hyperion = getHyperion(ctx.source) ?: return@executes 0
+                        val stack = ItemArgument.getItem(ctx, "item")
+                            .createItemStack(IntegerArgumentType.getInteger(ctx, "count"))
+                        if (!hyperion.addToInventory(stack)) {
+                            ctx.source.sendFailure(Component.literal("Hyperion's inventory is full."))
+                        }
+                        1
+                    })
+                .executes { ctx ->
+                    val hyperion = getHyperion(ctx.source) ?: return@executes 0
+                    hyperion.addToInventory(ItemArgument.getItem(ctx, "item").createItemStack(1))
+                    1
+                }))
+
+        .then(Commands.literal("hold")
+            .then(Commands.argument("item", ItemArgument.item(buildCtx))
+                .then(Commands.argument("count", IntegerArgumentType.integer(1, 64))
+                    .executes { ctx ->
+                        val hyperion = getHyperion(ctx.source) ?: return@executes 0
+                        hyperion.holdMainHand(ItemArgument.getItem(ctx, "item")
+                            .createItemStack(IntegerArgumentType.getInteger(ctx, "count")))
+                        1
+                    })
+                .executes { ctx ->
+                    getHyperion(ctx.source)?.holdMainHand(
+                        ItemArgument.getItem(ctx, "item").createItemStack(1)); 1
+                }))
+
+        .then(Commands.literal("offhand")
+            .then(Commands.argument("item", ItemArgument.item(buildCtx))
+                .executes { ctx ->
+                    getHyperion(ctx.source)?.holdOffHand(
+                        ItemArgument.getItem(ctx, "item").createItemStack(1)); 1
+                }))
+
+        .then(Commands.literal("wear")
+            .then(Commands.argument("item", ItemArgument.item(buildCtx))
+                .executes { ctx ->
+                    getHyperion(ctx.source)?.autoEquip(
+                        ItemArgument.getItem(ctx, "item").createItemStack(1)); 1
+                }))
+
+        .then(Commands.literal("equip")
+            .then(Commands.argument("slot", StringArgumentType.word())
+                .then(Commands.argument("item", ItemArgument.item(buildCtx))
+                    .executes { ctx ->
+                        val hyperion = getHyperion(ctx.source) ?: return@executes 0
+                        val slotStr  = StringArgumentType.getString(ctx, "slot")
+                        val slot     = slotFromString(slotStr) ?: run {
+                            ctx.source.sendFailure(Component.literal(
+                                "Unknown slot '$slotStr'. " +
+                                        "Valid: head, chest, legs, feet, mainhand, offhand"))
+                            return@executes 0
+                        }
+                        hyperion.equip(slot, ItemArgument.getItem(ctx, "item").createItemStack(1))
+                        1
+                    })))
+
+        .then(Commands.literal("clear").executes { ctx ->
+            getHyperion(ctx.source)?.clearInventory()
+            ctx.source.sendSystemMessage(Component.literal("Hyperion's inventory cleared."))
+            1
+        })
+
+        .then(Commands.literal("default").executes { ctx ->
+            val hyperion = getHyperion(ctx.source) ?: return@executes 0
+            hyperion.applyLoadout(HyperionLoadout.Builder(ctx.source.registryAccess()).defaultLoadout)
+            ctx.source.sendSystemMessage(Component.literal("Default loadout applied."))
+            1
+        })
 }

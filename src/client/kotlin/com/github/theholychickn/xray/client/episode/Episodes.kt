@@ -1,8 +1,10 @@
 package com.github.theholychickn.xray.client.episode
 
 import com.github.theholychickn.xray.HyperionMod
+import com.github.theholychickn.xray.client.dialog.DialogManager
 import net.minecraft.client.KeyMapping
 import net.minecraft.client.Minecraft
+import net.minecraft.server.MinecraftServer
 
 
 /**
@@ -43,6 +45,10 @@ object Episodes {
      * Returns the activated episode, or null if the registry is empty.
      */
     fun activate(id: String): Episode? {
+        if (registry.isEmpty()) {
+            HyperionMod.LOGGER.warn("No episodes registered. Cannot activate this $id.")
+            return null
+        }
         val ep = registry[id] ?: run {
             HyperionMod.LOGGER.warn(
                 "[Hyperion] No episode registered with id '$id'." +
@@ -51,9 +57,11 @@ object Episodes {
             registry.values.first()
         }
         active = ep
+        DialogManager.reset()
         ep.reset()
         return ep
     }
+
 
     // ── queries ───────────────────────────────────────────────────────────────────────
 

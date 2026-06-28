@@ -6,7 +6,7 @@ import net.fabricmc.loader.api.FabricLoader
 import java.io.File
 
 data class HyperionConfig(
-    var activeEpisode: String = "apollyon_upload_1"
+    var activeEpisode: String = "hyperion_test"
 )
 
 object ConfigManager {

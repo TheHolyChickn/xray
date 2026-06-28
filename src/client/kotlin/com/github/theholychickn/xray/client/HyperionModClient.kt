@@ -5,6 +5,7 @@ import com.github.theholychickn.xray.client.entities.HyperionRenderer
 import com.github.theholychickn.xray.client.episode.ApollyonUpload1
 import com.github.theholychickn.xray.client.episode.Episode
 import com.github.theholychickn.xray.client.episode.Episodes
+import com.github.theholychickn.xray.client.episode.HyperionTestEpisode
 import com.github.theholychickn.xray.config.ConfigManager
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
@@ -41,7 +42,8 @@ class HyperionModClient : ClientModInitializer {
         // ── Register all episodes (also registers their keybinds with Fabric) ─────────
         // Add new episodes here as the ARG grows.
         Episodes.register(
-            ApollyonUpload1()
+            ApollyonUpload1(),
+            HyperionTestEpisode()
         )
 
         // ── Activate the episode specified in the config file ─────────────────────────
@@ -90,8 +92,7 @@ class HyperionModClient : ClientModInitializer {
                 }
             }
 
-            val ep = Episodes.active ?: return@register
-            ep.keybinds.forEach { (key, mapping) ->
+            Episodes.getActiveKeybinds().forEach { (key, mapping) ->
                 while (key.consumeClick()) { mapping.invoke(client) }
             }
         }
