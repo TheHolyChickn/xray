@@ -75,115 +75,85 @@ class HyperionTestEpisode : Episode(
             "key.hyperion_test.spawn",
             GLFW.GLFW_KEY_1,
             HyperionModClient.category
-        ) to { client ->
-            client.onServer {
-                overworld().getEntitiesOfClass(HyperionEntity::class.java, WORLD_BOX)
-                    .forEach { it.remove(Entity.RemovalReason.DISCARDED) }
-                val level = overworld()
-                val entity = HyperionEntity(HyperionMod.HYPERION_ENTITY, level).also { e ->
-                    e.setPos(SPAWN_X, SPAWN_Y, SPAWN_Z)
-                    HyperionLoadout.Builder(level.registryAccess()).defaultLoadout.applyTo(e)
-                }
-                level.addFreshEntity(entity)
-            }
-            client.player?.sendSystemMessage(
-                Component.literal("[HyperionTest] Spawned at (${SPAWN_X.toInt()}, ${SPAWN_Y.toInt()}, ${SPAWN_Z.toInt()}) with default loadout.")
-            )
-        },
+        ) to { client -> spawnHyperion(client, SPAWN_X, SPAWN_Y, SPAWN_Z) },
 
         // ── KP_2: Armor test ──────────────────────────────────────────────────────────
         // Clears all armor, then re-equips each slot one at a time with a 1-second
         // (20-tick) gap so you can watch the model update slot by slot.
 
-        KeyMapping(
-            "key.hyperion_test.armor",
-            GLFW.GLFW_KEY_2,
-            HyperionModClient.category
-        ) to { client ->
-            client.withHyperion { hyperion ->
-                val builder = HyperionLoadout.Builder(hyperion.registryAccess())
-                HyperionAction.Builder(hyperion).send {
-                    say("Armor test starting — stripping all slots.")
-                    clearInventory()
-                    wait(20)            // 1 s — observe naked model
+        hyperionActionKeybindBuilder(
+            "armor",
+            GLFW.GLFW_KEY_2
+        ) { builder ->
+            say("Armor test starting — stripping all slots.")
+            clearInventory()
+            wait(20)            // 1 s — observe naked model
 
-                    say("Equipping helmet.")
-                    equip(EquipmentSlot.HEAD, builder.maxHelmet)
-                    wait(20)
+            say("Equipping helmet.")
+            equip(EquipmentSlot.HEAD, builder.maxHelmet)
+            wait(20)
 
-                    say("Equipping chestplate.")
-                    equip(EquipmentSlot.CHEST, builder.maxChestplate)
-                    wait(20)
+            say("Equipping chestplate.")
+            equip(EquipmentSlot.CHEST, builder.maxChestplate)
+            wait(20)
 
-                    say("Equipping leggings.")
-                    equip(EquipmentSlot.LEGS, builder.maxLegs)
-                    wait(20)
+            say("Equipping leggings.")
+            equip(EquipmentSlot.LEGS, builder.maxLegs)
+            wait(20)
 
-                    say("Equipping boots.")
-                    equip(EquipmentSlot.FEET, builder.maxBoots)
-                    wait(20)
-
-                    say("Armor test complete. All four slots occupied.")
-                }.build().invoke()
-            }
+            say("Equipping boots.")
+            equip(EquipmentSlot.FEET, builder.maxBoots)
+            wait(20)
+            say("Armor test complete. All four slots occupied.")
         },
 
         // ── KP_3: Hand-item test ──────────────────────────────────────────────────────
         // Cycles through several main-hand items and two off-hand items so you can
         // confirm ItemInHandLayer is rendering correctly for different item types.
 
-        KeyMapping(
-            "key.hyperion_test.hands",
-            GLFW.GLFW_KEY_3,
-            HyperionModClient.category
-        ) to { client ->
-            client.withHyperion { hyperion ->
-                val builder  = HyperionLoadout.Builder(hyperion.registryAccess())
+        hyperionActionKeybindBuilder(
+            "hands",
+            GLFW.GLFW_KEY_3
+        ) { builder ->
+            say("Hand-item test starting.")
 
-                HyperionAction.Builder(hyperion).send {
-                    say("Hand-item test starting.")
+            say("Main hand: sword.")
+            holdMainHand(builder.maxSword)
+            wait(20)
 
-                    // ── main hand cycling ────────────────────────────────────────────
-                    say("Main hand: sword.")
-                    holdMainHand(builder.maxSword)
-                    wait(20)
+            say("Main hand: fortune pick.")
+            holdMainHand(builder.fortunePick)
+            wait(20)
 
-                    say("Main hand: fortune pick.")
-                    holdMainHand(builder.fortunePick)
-                    wait(20)
+            say("Main hand: silk pick.")
+            holdMainHand(builder.silkPick)
+            wait(20)
 
-                    say("Main hand: silk pick.")
-                    holdMainHand(builder.silkPick)
-                    wait(20)
+            say("Main hand: bow.")
+            holdMainHand(ItemStack(Items.BOW))
+            wait(20)
 
-                    say("Main hand: bow.")
-                    holdMainHand(ItemStack(Items.BOW))
-                    wait(20)
+            say("Main hand: written book (flat item).")
+            holdMainHand(ItemStack(Items.WRITTEN_BOOK))
+            wait(20)
 
-                    say("Main hand: written book (flat item).")
-                    holdMainHand(ItemStack(Items.WRITTEN_BOOK))
-                    wait(20)
+            say("Main hand: empty.")
+            holdMainHand(ItemStack.EMPTY)
+            wait(20)
 
-                    say("Main hand: empty.")
-                    holdMainHand(ItemStack.EMPTY)
-                    wait(20)
+            say("Off hand: totem of undying.")
+            holdOffHand(ItemStack(Items.TOTEM_OF_UNDYING))
+            wait(20)
 
-                    // ── off-hand cycling ─────────────────────────────────────────────
-                    say("Off hand: totem of undying.")
-                    holdOffHand(ItemStack(Items.TOTEM_OF_UNDYING))
-                    wait(20)
+            say("Off hand: shield.")
+            holdOffHand(ItemStack(Items.SHIELD))
+            wait(20)
 
-                    say("Off hand: shield.")
-                    holdOffHand(ItemStack(Items.SHIELD))
-                    wait(20)
+            say("Off hand: empty.")
+            holdOffHand(ItemStack.EMPTY)
+            wait(20)
 
-                    say("Off hand: empty.")
-                    holdOffHand(ItemStack.EMPTY)
-                    wait(20)
-
-                    say("Hand-item test complete.")
-                }.build().invoke()
-            }
+            say("Hand-item test complete.")
         },
 
         // ── KP_4: Inventory test ──────────────────────────────────────────────────────

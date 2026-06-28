@@ -1,9 +1,13 @@
 package com.github.theholychickn.xray.client.episode
 
+import com.github.theholychickn.xray.HyperionMod
 import com.github.theholychickn.xray.client.BlockModifier
 import com.github.theholychickn.xray.client.HyperionModClient
 import com.github.theholychickn.xray.client.dialog.ThoughtEntry
+import com.github.theholychickn.xray.entities.HyperionAction
 import com.github.theholychickn.xray.entities.HyperionEntity
+import com.github.theholychickn.xray.entities.HyperionLoadout
+import com.mojang.authlib.minecraft.client.MinecraftClient
 import com.mojang.blaze3d.platform.InputConstants
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper
@@ -92,6 +96,8 @@ abstract class Episode(
         savedBlockStates.forEach { (pos, state) -> BlockModifier.set(pos, state) }
     }
 
+    // ── command builder helper functions ──────────────────────────────────────────────
+
     /**
      * Runs [block] on the server thread, passing the first Hyperion entity found.
      * Prints a hint to chat (on the client thread) and no-ops if none exists.
@@ -115,6 +121,53 @@ abstract class Episode(
     /** Runs [block] on the integrated server thread. No-op if not in singleplayer. */
     protected fun Minecraft.onServer(block: MinecraftServer.() -> Unit) {
         singleplayerServer?.let { server -> server.execute { server.block() } }
+    }
+
+    /**
+     * Used for constructing Hyperion action strings more conveniently.
+     *
+     * @param name The keybind name. Eg. setting `name = "test"` will register the keybind as `"key.hyperion.test"`
+     * @param key The key to bind to the action. Pass using [GLFW].
+     * @param action The action to bind to the given key. Exposes a [HyperionLoadout.Builder] for managing inventory.
+     */
+    protected fun hyperionActionKeybindBuilder(
+        name: String,
+        key: Int,
+        action: HyperionAction.(HyperionLoadout.Builder) -> Unit
+    ): Pair<KeyMapping, (Minecraft) -> Unit> = KeyMapping(
+        "key.hyperion.$name",
+        key,
+        HyperionModClient.category
+    ) to { client ->
+        client.withHyperion { hyperion ->
+            HyperionAction.Builder(hyperion).send {
+                action(HyperionLoadout.Builder(hyperion.registryAccess()))
+            }.build().invoke()
+        }
+    }
+
+    /**
+     * Spawns Hyperion. Useful for keybinds that involve spawning Hyperion.
+     */
+    protected fun spawnHyperion(
+        client: Minecraft,
+        x: Double = 0.0,
+        y: Double = 0.0,
+        z: Double = 0.0,
+        loadout: HyperionLoadout? = null,
+    ) {
+        client.onServer {
+            val level = overworld()
+            val entity = HyperionEntity(HyperionMod.HYPERION_ENTITY, level).also { e ->
+                e.setPos(x, y, z)
+                if (loadout == null) {
+                    HyperionLoadout.Builder(level.registryAccess()).defaultLoadout.applyTo(e)
+                } else {
+                    loadout.applyTo(e)
+                }
+            }
+            level.addFreshEntity(entity)
+        }
     }
 
     // ── abstract ──────────────────────────────────────────────────────────────────────
